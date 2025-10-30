@@ -1,0 +1,33 @@
+{
+    "timesteps": 365,
+    "initial_snails": 200,
+    "maturity_age": 10,
+    "lifespan": 365,
+    "repro_prob": 0.10,
+    "offspring_min": 2,
+    "offspring_max": 5,
+    "size_min": 1,
+    "size_max": 5,
+    "hunger_limit": 5,
+    "initial_pred": 10,
+    "pred_maturity_age": 20,
+    "pred_lifespan": 50,
+    "pred_repro_prob": 0.05,
+    "pred_offspring_max": 2,
+    "pred_offspring_min": 1,
+    "log_file": "snailSim.csv",
+    "pred_hunger_limit": 2,
+    "regions": [
+	{
+	    "initial_food": 1000,
+	    "regen_per_day": 50,
+	    "max_food": 1000
+	},
+	{
+	    "initial_food": 1000,
+	    "regen_per_day": 50,
+	    "max_food": 1000
+	}
+   ]
+	    
+}
