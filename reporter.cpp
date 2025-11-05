@@ -31,6 +31,7 @@ void Reporter::writeSummary() {
     // Write daily log to CSV
     std::ofstream outFile(path_);
     if (outFile.is_open()) {
+        outFile << totals_.peak_snail_population << " " << totals_.peak_pred_population << "\n";
         std::cout << "\nDay,SnailPopulation, PredPopulation\n"; //Print out to terminal
         outFile << "Day,SnailPopulation, PredPopulation\n";
         int day = 1;

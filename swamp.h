@@ -18,6 +18,7 @@ public:
         int reproMax = 5;
         int hungerLimit = 3; // days without food before starvation
 
+        float predSuccessRate = 0.5;
         int predMaturityAge = 20; // days
         int predLifespan = 500; // days
         float predReproProb = 0.1; // per-day

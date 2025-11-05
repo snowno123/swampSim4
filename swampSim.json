@@ -9,14 +9,15 @@
     "size_min": 1,
     "size_max": 5,
     "hunger_limit": 5,
-    "initial_pred": 10,
-    "pred_maturity_age": 20,
+    "initial_pred": 20,
+    "predation_success_rate": 0.8,
+    "pred_maturity_age": 15,
     "pred_lifespan": 50,
     "pred_repro_prob": 0.05,
     "pred_offspring_max": 2,
     "pred_offspring_min": 1,
     "log_file": "snailSim.csv",
-    "pred_hunger_limit": 2,
+    "pred_hunger_limit": 5,
     "regions": [
 	{
 	    "initial_food": 1000,

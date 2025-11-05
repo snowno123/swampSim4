@@ -10,7 +10,7 @@
 #include <cstdlib>   // for rand(), srand()
 #include <ctime>
 
-SnailConfig::SnailConfig(const std::string& path, int foodRegen) : Configure(path), path_(path), foodRegen_(foodRegen) {}
+SnailConfig::SnailConfig(const std::string& configPath, int foodRegen, float predSuccessRate, const std::string& csvPath) : Configure(configPath), configPath_(configPath), foodRegen_(foodRegen), predSuccessRate_(predSuccessRate), csvPath_(csvPath) {}
 
 void SnailConfig::configure() {
     srand(time(0)); //Random number generator
@@ -22,14 +22,13 @@ void SnailConfig::configure() {
     int predMaxAge = 500;
     int sizeMin = 1;
     int sizeMax = 5;
-    std::string csvFilePath = "snailSim.csv";
     int initialFood = 1000;
     int maxFoodLevel = 1000;
     Swamp::Params par; // defaults already set in struct
     std::vector<Region*> regions; //array of regions
 
     // Read overrides from JSON if present
-    std::ifstream file(path_);
+    std::ifstream file(configPath_);
     if (file.is_open()) {
             nlohmann::json config;
             file >> config;
@@ -39,7 +38,6 @@ void SnailConfig::configure() {
             initialPred = config.value("initial_pred", initialPred);
             sizeMin = config.value("size_min", sizeMin); 
             sizeMax = config.value("size_max", sizeMax);
-            csvFilePath = config.value("log_file", csvFilePath);
             initialFood = config.value("initial_food", initialFood);
 
             //snail values to read to parameters collection for swamp
@@ -52,6 +50,7 @@ void SnailConfig::configure() {
             par.hungerLimit = config.value("hunger_limit", par.hungerLimit);
 
             //pred values to to read to parameters collection for swamp
+            par.predSuccessRate = predSuccessRate_;
             par.predMaturityAge = config.value("pred_maturity_age", par.predMaturityAge);
             par.predLifespan = config.value("pred_lifespan", par.predLifespan);
             predMaxAge = par.predLifespan;
@@ -71,7 +70,7 @@ void SnailConfig::configure() {
                     }
                     maxFoodLevel = regionData.value("max_food", maxFoodLevel);
 
-                    Region* r = new Region(initialFood, foodRegen_, maxFoodLevel);
+                    Region* r = new Region(/*swamp=*/nullptr, initialFood, foodRegen_, maxFoodLevel);
                     simulation->addObject(r);
                     regions.push_back(r);
                 }
@@ -80,12 +79,17 @@ void SnailConfig::configure() {
     }
 
     // Create Reporter
-    auto* reporter = new Reporter(csvFilePath, /*swamp, set later*/ nullptr);
+    auto* reporter = new Reporter(csvPath_, /*swamp, set later*/ nullptr);
     simulation->addObject(reporter);
      // Create Swamp
     auto* swamp = new Swamp(regions, par, /*sim*/ simulation, reporter, /*intialAmountOfSnails*/ initialSnails, initialPred);
 
     reporter->setSwamp(swamp);
+
+    //Add swamp to regions
+    for (int i = 0; i < regions.size(); i++) {
+        regions[i]->setSwamp(swamp);
+    }
 
     //Error checking
     if (sizeMin < 1) {
@@ -96,6 +100,15 @@ void SnailConfig::configure() {
     }
     if (regions.empty()) {
         std::cout << "\nno regions\n";
+    }
+    
+    //Create initial predators
+    for (int i =0; i <initialPred; i++) {
+        int age = rand() % predMaxAge + 0;
+        int regionIndex = rand() % regions.size();
+
+        regions[regionIndex]->incrementPredAmount(1);
+        simulation->addObject(new Predator(swamp, regions[regionIndex], age));
     }
 
     // Create initial snails
@@ -108,14 +121,6 @@ void SnailConfig::configure() {
         simulation->addObject(new Snail(swamp, regions[regionIndex], age, size));
     }
 
-    //Create initial predators
-    for (int i =0; i <initialPred; i++) {
-        int age = rand() % predMaxAge + 0;
-        int regionIndex = rand() % regions.size();
-
-        regions[regionIndex]->incrementPredAmount(1);
-        simulation->addObject(new Predator(swamp, regions[regionIndex], age));
-    }
 
     // Attach the custom clock (day starts at 0)
     auto* clock = new SnailClock(/*initial*/0, /*limit*/timesteps, swamp, reporter);
