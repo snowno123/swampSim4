@@ -10,28 +10,23 @@
 
 int daysToEquilibrium( const std::string& csvFile, int window = 10, float threshold = 0.1) { //window = # of days within threshold of stability; threshold = max amount of change in percentage
     
-    std::ifstream f(csvFile);
-    std::string line;
-    //Skip first two lines
-    std::getline(f, line); std::getline(f, line);
+    std::ifstream f(csvFile); 
+    //Skip first two lines of csv file ( header + peak populations )
+    std::string line; std::getline(f, line); std::getline(f, line);
 
-    //Define variables
     std::vector<int> snailDailyPopulations; int day, snail, pred; char comma;
 
-    //Iterate through snail daily populations to add to "snailDailyPopulations" collection
+    // Create collection of daily snail populations
     while ( f >> day >> comma >> snail >> comma >> pred ) {
         snailDailyPopulations.push_back(snail);
     }
     f.close();
 
-    //Calculate days to Equilibrium
-    if (snailDailyPopulations.size() < window) return snails.size();
-    int stableCount = 0;
+    int eqCount = 0;
+    //set to total number of days
+    int daysToEq = snailDailyPopulations.size(); //value to be returned if snail population never reaches equilibrium
 
-    // if snail population never reached equalibirium, return total number of days
-    int daysToEq = snailDailyPopulations.size();
-
-    //Check if snail population ever reaches stability
+    //Find how many days snail population takes to achieve equilibrium
     for (int day = 1; day < snailDailyPopulations.size(); day++) {
         //Calculate change in percentage
         float previous = 0;
@@ -44,10 +39,10 @@ int daysToEquilibrium( const std::string& csvFile, int window = 10, float thresh
 
         //Check change in percentage against threshold 
         if (change < threshold) {
-            stableCount++;
-            if (stableCount >= window) daysToEq = day; //return current day as day the snail population reached equilibrium
+            eqCount++;
+            if (eqCount >= window) daysToEq = day; //return current day as day the snail population reached equilibrium
         } else {
-            stableCount = 0;
+            eqCount = 0;
         }
     }
     return daysToEq;
