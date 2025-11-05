@@ -8,7 +8,7 @@
 #include <cmath>
 #include <vector>
 
-int checkEquilibrium( const std::string& csvFile, int window = 10, float threshold = 0.1) { //window = # of days within threshold of stability; threshold = max amount of change in percentage
+int daysToEquilibrium( const std::string& csvFile, int window = 10, float threshold = 0.1) { //window = # of days within threshold of stability; threshold = max amount of change in percentage
     
     std::ifstream f(csvFile);
     std::string line;
@@ -16,44 +16,48 @@ int checkEquilibrium( const std::string& csvFile, int window = 10, float thresho
     std::getline(f, line); std::getline(f, line);
 
     //Define variables
-    std::vector<int> snails; int day, snail, pred; char comma;
+    std::vector<int> snailDailyPopulations; int day, snail, pred; char comma;
 
-    //Iterate through snails to add to "snails" collection
+    //Iterate through snail daily populations to add to "snailDailyPopulations" collection
     while ( f >> day >> comma >> snail >> comma >> pred ) {
-        snails.push_back(snail);
+        snailDailyPopulations.push_back(snail);
     }
     f.close();
 
-    //Calculate daysToEq
-    if (snails.size() < window) return snails.size();
+    //Calculate days to Equilibrium
+    if (snailDailyPopulations.size() < window) return snails.size();
     int stableCount = 0;
-    for (int i = 1; i < snails.size(); i++) {
+
+    // if snail population never reached equalibirium, return total number of days
+    int daysToEq = snailDailyPopulations.size();
+
+    //Check if snail population ever reaches stability
+    for (int day = 1; day < snailDailyPopulations.size(); day++) {
         //Calculate change in percentage
         float previous = 0;
-        if (float(snails[i-1]) == 0) {
-            previous = float(snails[i-1]) + 1; //Avoid dividing by 0
+        if (float(snailDailyPopulations[i-1]) == 0) {
+            previous = float(snailDailyPopulations[i-1]) + 1; //Avoid dividing by 0
         } else {
-            previous = float(snails[i-1]);
+            previous = float(snailDailyPopulations[i-1]);
         }
-        float change = std::abs(snails[i] - snails[i-1]) / previous;
+        float change = std::abs(snailDailyPopulations[i] - snailDailyPopulations[i-1]) / previous;
 
-        //Check change against threshold
+        //Check change in percentage against threshold 
         if (change < threshold) {
             stableCount++;
-            if (stableCount >= window) return i;
+            if (stableCount >= window) daysToEq = day; //return current day as day the snail population reached equilibrium
         } else {
             stableCount = 0;
         }
     }
-    //If never stable, return total number of days
-    return snails.size();
+    return daysToEq;
 }
 
 int main(int argc, char** argv) {
     //If not proper amount of arguments
     if (argc < 5) { std::cerr << "call ./swampSimSweep regenStart,regenEnd regenStep predStart,predEnd predStep configFile\n"; return 1;}
 
-    //Parse arguments with commac
+    //Parse arguments with comma
     auto parseRangeInt = [](const std::string& s, int& start, int& end) {
         size_t comma = s.find(',');
         start = std::stoi(s.substr(0, comma));
@@ -78,7 +82,7 @@ int main(int argc, char** argv) {
     std::ofstream csv("parameterSweepResults.csv");
     csv << "foodRegen,predSuccessRate,daysToEquilibrium,peakSnail,peakPred\n";  // header
 
-    //iterate through the range of values, incrementing by step amount
+    //run simulation with every combination of foodRegen & predSuccessRate
     for (int food = foodStart; food <= foodEnd; food += foodStep) {
         for (float pred = predStart; pred <= predEnd; pred += predStep) {
             //Build csv file name
@@ -93,12 +97,12 @@ int main(int argc, char** argv) {
             std::cout << "\nRunning" << cmd.str() <<std::endl;
             std::system(cmd.str().c_str());
 
-            //Find peak pops, days to equalibrium
+            //Find peak populations, days to Equilibrium
             std::ifstream inFile(csvName.str());
             std::string line; std::getline(inFile, line); std::istringstream peakStream(line);
             int peakSnail = 0; int peakPred = 0;
             peakStream >> peakSnail >> peakPred;
-            int daysToEq = checkEquilibrium(csvName.str());
+            int daysToEq = daysToEquilibrium(csvName.str());
 
             //Append to master csv file
             csv << food << "," << pred << "," << daysToEq << "," << peakSnail << "," << peakPred << "\n";
